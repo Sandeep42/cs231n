@@ -38,8 +38,8 @@ def svm_loss_naive(W, X, y, reg):
         loss += margin
         dL[:,j] = X[i]
         pos_scores += 1.0
-      dL[:,y[i]] = -1*pos_scores*X[i]
-      dW += dL
+    dL[:,y[i]] = -1*pos_scores*X[i]
+    dW += dL
 
   
   dW = dW*(1.0/num_train) + reg*W
