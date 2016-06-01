@@ -79,7 +79,24 @@ def svm_loss_vectorized(W, X, y, reg):
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
+  scores = X.dot(W)
+  #dL = np.zeros(W.shape)
+  # To the future me: This is confusing, please look at the notes!
+  # np.choose is used to select only the correct class scores
+  # The first argument is the index of the correct class.
+  correct = np.choose(y,scores.T)
+  # compute the margins for all classes in one vector operation
+  # And there is a broadcasting too.
+  margins = scores.T - correct + 1
+  M = (margins>0).astype(float)
+  nums_of_positive_margin = M.sum(1) - 1
+  M[range(M.shape[0]), y] = -nums_of_positive_margin 
+  
+  # on y-th position scores[y] - scores[y] canceled and gave delta. We want
+  # to ignore the y-th position and only consider margin on max wrong class
+  # -1 because I've miscounted in the vectorized implementation.
+  loss = (1.0/X.shape[0])*np.sum(np.maximum(0,margins)) - 1 + 0.5 * reg * np.sum(W * W)
+  dW = (1.0/X.shape[0])*np.dot(X.T, M) + reg*W
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -94,7 +111,7 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  pass
+  
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
