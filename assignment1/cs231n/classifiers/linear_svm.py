@@ -88,8 +88,9 @@ def svm_loss_vectorized(W, X, y, reg):
   # compute the margins for all classes in one vector operation
   # And there is a broadcasting too.
   margins = scores.T - correct + 1
-  M = (margins>0).astype(float)
+  M = (margins.T>0).astype(float)
   nums_of_positive_margin = M.sum(1) - 1
+  #print nums_of_positive_margin.shape
   M[range(M.shape[0]), y] = -nums_of_positive_margin 
   
   # on y-th position scores[y] - scores[y] canceled and gave delta. We want
