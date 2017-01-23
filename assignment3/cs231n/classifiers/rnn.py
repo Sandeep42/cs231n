@@ -135,7 +135,30 @@ class CaptioningRNN(object):
     # defined above to store loss and gradients; grads[k] should give the      #
     # gradients for self.params[k].                                            #
     ############################################################################
-    pass
+    # image features to hidden: (N,D),(D,H)>(N,H)
+    img_hidden = np.dot(features, W_proj) + b_proj
+    # word indices to vectors (N,T)(T,W)>(N,T,W)
+    emb_forward, cache1 = word_embedding_forward(captions_in, W_embed)
+    # initial hidden state vectors for rnn
+    if self.cell_type == 'rnn':
+        # (N,T,W) > (N,T,H)
+        r_forward, cache2 = rnn_forward(emb_forward, img_hidden, Wx, Wh, b)
+    # temporal forward loss
+    temp_forward, cache3 = temporal_affine_forward(r_forward, W_vocab, b_vocab)
+    # print temp_forward.shape
+    # print captions_out.shape
+    # calculate loss
+    loss, dout = temporal_softmax_loss(temp_forward, captions_out, mask)
+    # backpropagating through layers: temporal affine backward
+    dh, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(dout, cache3)
+    # the rnn
+    drnn, dh0, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dh, cache2)
+    # the embeddings
+    grads['W_embed'] = word_embedding_backward(drnn, cache1)
+    # the images
+    grads['b_proj'] = np.sum(dh0, axis=0)
+    grads['W_proj'] = np.dot(features.T, dh0)
+
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -169,7 +192,7 @@ class CaptioningRNN(object):
     """
     N = features.shape[0]
     captions = self._null * np.ones((N, max_length), dtype=np.int32)
-
+    print captions
     # Unpack parameters
     W_proj, b_proj = self.params['W_proj'], self.params['b_proj']
     W_embed = self.params['W_embed']
@@ -197,7 +220,15 @@ class CaptioningRNN(object):
     # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
     # a loop.                                                                 #
     ###########################################################################
-    pass
+    # from the images
+    initial_hidden = np.dot(features, W_proj) + b_proj
+    initial_caption = W_embed[(self._start)]
+    print initial_caption.shape
+    next_h, _ = rnn_step_forward(initial_caption, initial_hidden, Wx, Wh, b)
+    print next_h.shape
+    for i in xrange(max_length):
+        pass
+
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
